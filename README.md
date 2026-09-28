@@ -26,48 +26,54 @@ To prevent voice traffic degradation from standard workstation data bursts, acce
 
 ![Switch VLAN Configuration](VLAN_DATA_VOIP.jpg)
 
-```text
-interface FastEthernet0/1
- switchport mode access
- switchport access vlan 10
- switchport voice vlan 40
-```
+    interface FastEthernet0/1
+     switchport mode access
+     switchport access vlan 10
+     switchport voice vlan 40
 
-2. Network Services: TFTP & Syslog Integration
-The environment utilizes centralized servers for network management. The TFTP Server provisions router configurations and IP phone firmware files, while the Syslog Server captures real-time administrative and telemetry events from the networking hardware.
+### 2. Network Services: TFTP & Syslog Integration
+The environment utilizes centralized servers for network management. The **TFTP Server** provisions router configurations and IP phone firmware files, while the **Syslog Server** captures real-time administrative and telemetry events from the networking hardware.
 
-3. Multi-Scope DHCP & Option 150 Provisioning
-The router was configured as the centralized DHCP server. The voice scope utilizes Option 150 to instruct registered IP phones where to download their operational configuration and firmware files:
+![TFTP Server Integration](TFTP_SERVER.jpg)
 
-! Voice DHCP Pool with Option 150
-ip dhcp pool VOIP_VOICE
-network 192.168.40.0 255.255.255.0
-default-router 192.168.40.1
-option 150 ip 192.168.40.1
-The router hosts the local PBX/call processing engine via Cisco IOS telephony-service, dynamically allocating Directory Numbers (DNs)
+![Syslog Server Integration](SYSLOG_SERVER.jpg)
 
-telephony-service
- max-ephones 10
- max-dn 10
- ip source-address 192.168.40.1 port 2000
- auto assign 1 to 10
+### 3. Multi-Scope DHCP & Option 150 Provisioning
+The router was configured as the centralized DHCP server. The voice scope utilizes **Option 150** to instruct registered IP phones where to download their operational configuration and firmware files:
 
- Call Routing & Dial Verification
+    ! Voice DHCP Pool with Option 150
+    ip dhcp pool VOIP_VOICE
+     network 192.168.40.0 255.255.255.0
+     default-router 192.168.40.1
+     option 150 ip 192.168.40.1
+
+### 4. Cisco Call Manager Express (CME) Telephony Services
+The router hosts the local PBX/call processing engine via Cisco IOS `telephony-service`, dynamically allocating Directory Numbers (DNs) and registering SCCP/Skinny endpoints:
+
+    telephony-service
+     max-ephones 10
+     max-dn 10
+     ip source-address 192.168.40.1 port 2000
+     auto assign 1 to 10
+     create cnf-files
+
+---
+
+## Call Routing & Dial Verification
+
 End-to-end call processing was validated across endpoints by executing test calls between active extensions:
 
-Source Endpoint: IP Phone 3 (Ext 1003)
+* **Source Endpoint:** IP Phone 3 (`Ext 1003`)
+* **Destination Endpoint:** IP Phone 2 (`Ext 1002`)
+* **State:** Verified active two-way call state (`Ring Out` / `From: 1003 Connected`).
 
-Destination Endpoint: IP Phone 2 (Ext 1002)
+![Active Call Verification](IP_PHONES.jpg)
 
-State: Verified active two-way call state (Ring Out / From: 1003 Connected).
+---
 
-Key Enterprise Networking Competencies
-Cisco IOS Voice Configuration: Configuring telephony-service, ephone, and ephone-dn parameters on Cisco ISR hardware.
-
-VLAN & QoS Segmentation: Segregating latency-sensitive voice traffic from workstation data traffic using switchport voice vlan.
-
-Dynamic Endpoint Provisioning: Deploying Option 150 within DHCP scopes for automated IP phone registration and provisioning.
-
-Inter-VLAN Routing: Configuring router-on-a-stick sub-interfaces (802.1Q encapsulation) to handle multi-subnet traffic boundaries.
-
-Network Telemetry Integration: Routing telephony events and switch states to central TFTP and Syslog management servers.
+## Key Enterprise Networking Competencies
+* **Cisco IOS Voice Configuration:** Configuring `telephony-service`, `ephone`, and `ephone-dn` parameters on Cisco ISR hardware.
+* **VLAN & QoS Segmentation:** Segregating latency-sensitive voice traffic from workstation data traffic using `switchport voice vlan`.
+* **Dynamic Endpoint Provisioning:** Deploying Option 150 within DHCP scopes for automated IP phone registration and provisioning.
+* **Inter-VLAN Routing:** Configuring router-on-a-stick sub-interfaces (802.1Q encapsulation) to handle multi-subnet traffic boundaries.
+* **Network Telemetry Integration:** Routing telephony events and switch states to central TFTP and Syslog management servers.
